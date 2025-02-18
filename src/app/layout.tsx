@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://kuruwacare.com/',
-    title: 'Kuruwa',
+    title: 'instaLabel',
     description:
       'Find the care you need, when you need it, and experience the peace of mind that comes from knowing you have a helping hand.',
     siteName: 'Kuruwa',
