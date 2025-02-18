@@ -12,8 +12,8 @@ const accent_font = Oxygen({
 
 export const metadata: Metadata = {
   title: { default: 'instaLabel', template: '%s - instaLabel' },
-  metadataBase: new URL('https://kuruwacare.com'),
-  description: 'Accessible Care for a Balanced Life',
+  metadataBase: new URL('https://instalabeldemo.vercel.app/'),
+  description: 'Efficient Kitchen Labeling for Food Safety and Inventory Management',
   icons: {
     icon: [
       {
@@ -24,17 +24,17 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: 'https://kuruwacare.com/',
+    url: 'https://instalabeldemo.vercel.app/',
     title: 'instaLabel',
     description:
-      'Find the care you need, when you need it, and experience the peace of mind that comes from knowing you have a helping hand.',
-    siteName: 'Kuruwa',
+      'Efficient Kitchen Labeling for Food Safety and Inventory Management',
+    siteName: 'instaLabel',
     images: [og.src],
   },
   twitter: {
-    title: 'Kuruwa',
+    title: 'instaLabel',
     description:
-      'Find the care you need, when you need it, and experience the peace of mind that comes from knowing you have a helping hand.',
+      'Efficient Kitchen Labeling for Food Safety and Inventory Management',
     card: 'summary_large_image',
   },
 };
