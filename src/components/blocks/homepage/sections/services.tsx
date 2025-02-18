@@ -23,7 +23,7 @@ export const Services = () => {
           <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
             <div className='p-6 shadow-md rounded-lg space-y-5 text-pretty'>
               <p className='text-lg md:text-xl '>
-              Smart Labeling, Simplified
+              Smart Labeling, Simplified by
               </p>
               <div className='h-56 w-full rounded-lg overflow-hidden'>
                 <Image
