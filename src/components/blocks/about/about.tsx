@@ -8,6 +8,7 @@ export const About = () => {
       <History/>
       <Values/>
       <Contact/>
+      <p>Hello</p>
     </>
   );
 };
