@@ -73,7 +73,7 @@ export const Footer = () => {
             <p className='font-medium text-primary'>Useful Links</p>
             <nav className='flex flex-col gap-2 sm:items-end text-muted-foreground'>
               <Link href={'/'}>Bournemouth, England</Link>
-              <Link href={'mailto:contact@kuruwa.com'}>contact@instalabel.com</Link>
+              <Link href={'mailto:contact@instalabel.co'}>contact@instalabel.co</Link>
               <Link href={'tel:+9779855011772'}>+44 7405924790</Link>
               <Link href={'tel:+9779851175495'}>+44 7509876500</Link>
             </nav>
@@ -96,7 +96,7 @@ export const Footer = () => {
         </div>
         <div className='text-center text-sm text-muted-foreground pt-12'>
           <p className=''>
-            Copyright &copy; {new Date().getFullYear()} Kuruwa. All Rights
+            Copyright &copy; {new Date().getFullYear()} instaLabel. All Rights
             Reserved | Design by{' '}
             <Link
               target='_blank'
@@ -113,7 +113,7 @@ export const Footer = () => {
             <div className='flex gap-2 items-center justify-center w-full sm:justify-start'>
               <Logo className='h-12 w-12' />
               <h2 className='text-primary text-3xl font-semibold font-accent tracking-tighter'>
-                Kuruwa
+                instaLabel
               </h2>
             </div>
             <nav className='flex gap-7 items-center justify-center w-full sm:justify-end'>
@@ -126,7 +126,7 @@ export const Footer = () => {
           <div className='flex gap-6 py-6 justify-between items-start flex-wrap sm:flex-nowrap'>
             <div className='flex flex-col w-full gap-2 items-center sm:items-start'>
               <p className='font-medium text-lg text-primary'>
-                Download the Kuruwa App
+                Download the instaLabel App
               </p>
               <div className='flex gap-2 justify-start items-center'>
                 <Link href={''} className=''>
@@ -166,7 +166,7 @@ export const Footer = () => {
         </div>
         <div className='text-center text-sm md:text-base'>
           <p className=''>
-            Copyright &copy; {new Date().getFullYear()} Kuruwa. All Rights
+            Copyright &copy; {new Date().getFullYear()} instaLabel. All Rights
             Reserved | Design by{' '}
             <Link
               target='_blank'

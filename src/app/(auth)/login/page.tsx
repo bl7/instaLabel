@@ -31,10 +31,10 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <h2 className="text-3xl font-semibold text-primary">Kuruwa</h2>
-          <h4 className="-mt-2 text-end text-sm font-light text-muted-foreground/80">
+          <h2 className="text-3xl font-semibold text-primary">instalabel</h2>
+          {/* <h4 className="-mt-2 text-end text-sm font-light text-muted-foreground/80">
             By <span className="font-medium">Vitacre</span>
-          </h4>
+          </h4> */}
         </div>
       </div>
       <div>

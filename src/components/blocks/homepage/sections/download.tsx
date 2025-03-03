@@ -13,7 +13,7 @@ export const Download = () => {
         <div className='flex flex-wrap lg:flex-nowrap gap-12 items-center'>
           {/* <div className='basis-full lg:basis-1/2 flex flex-col items-start'>
             <p className='text-2xl md:text-3xl font-medium'>
-              The Kuruwa Difference
+              The instaLabel Difference
             </p>
             <p className='mt-2 text-base sm:text-xl text-muted-foreground font-light'>
               Live life to the fullest with a care ecosystem that adapts to you.

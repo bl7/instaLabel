@@ -17,7 +17,7 @@ export const Features = () => {
           </div>
 
           <div className='flex gap-12 h-fit items-center justify-center flex-wrap lg:flex-nowrap'>
-            <Image src={cleanKitchen} alt='Kuruwa Caretaker' className='' />
+            <Image src={cleanKitchen} alt='Instalabel Services' className='' />
             <div className='text-center lg:text-start text-balance lg:text-pretty lg:max-w-xl space-y-4'>
               <p className='text-xl md:text-2xl '>
               Smart Printing, Inventory Tracking, Compliance Assurance, Kitchen Analytics
@@ -40,12 +40,12 @@ export const Features = () => {
           </div>
           {/* <div className='flex justify-center flex-wrap'>
             <div className='basis-full mb-3 text-center'>
-              <p className='text-2xl'>How to book a Kuruwa?</p>
+              <p className='text-2xl'>How to book a instaLabel?</p>
             </div>
             <div className='basis-full sm:basis-1/2 md:basis-1/3 pt-3 flex xl:basis-1/5 pr-3'>
               <div className='px-5 py-3 border w-full rounded-lg'>
                 <p className='text-lg font-semibold'>Step 1</p>
-                <p className=''>Open Kuruwa App</p>
+                <p className=''>Open instaLabel App</p>
               </div>
             </div>
             <div className='basis-full sm:basis-1/2 md:basis-1/3 pt-3 flex xl:basis-1/5 pr-3'>
@@ -70,7 +70,7 @@ export const Features = () => {
               <div className='px-5 py-3 border w-full rounded-lg '>
                 <p className='text-lg font-semibold'>Step 1</p>
                 <p className=''>
-                  Congratulations, your Kuruwa will arrive shortly.
+                  Congratulations, your instaLabel will arrive shortly.
                 </p>
               </div>
             </div>
