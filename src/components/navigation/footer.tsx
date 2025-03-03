@@ -62,6 +62,7 @@ export const Footer = () => {
           <div className='space-y-4'>
             <p className='font-medium text-primary'>Useful Links</p>
             <nav className='flex flex-col gap-2  text-muted-foreground'>
+            <Link href={'/'}>Blog</Link>
               <Link href={'/'}>Privacy Policy</Link>
               <Link href={'/services'}>Terms Of Service</Link>
               <Link href={'/about'}>Support</Link>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui';
+import { Button, buttonVariants } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 export const Header = () => {
   return (
@@ -16,15 +17,13 @@ export const Header = () => {
           <Link href={'/about#contact'}>Contact</Link>
         </nav>
         <div className='flex gap-2  ml-auto'>
-          <Button size={'lg'} className='text-base rounded-full'>
+          <Link href={'/login'} className={cn(buttonVariants({ variant: 'default', size:"sm" }), "text-base rounded-full")}>
             Sign In
-          </Button>
-          <Button
-            size={'default'}
-            className='text-base rounded-full p-4 h-11 hidden sm:flex'
-            variant={'ghost'}>
+          </Link>
+          <Link href={'/register'}
+            className={cn(buttonVariants({ variant: 'ghost', size:"sm" }), "text-base rounded-full")}>
             Register
-          </Button>
+          </Link>
         </div>
       </div>
       <div className='container md:hidden border-y py-4 '>
