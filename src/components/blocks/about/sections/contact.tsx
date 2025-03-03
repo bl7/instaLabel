@@ -1,5 +1,6 @@
 import { Button, Input, Textarea } from '@/components/ui';
 import React from 'react';
+import {ContactForm} from './form';
 
 export const Contact = () => {
   return (
@@ -17,10 +18,7 @@ export const Contact = () => {
           <h3 className='text-xl sm:text-2xl text-pretty text-center lg:text-start'>
             Send us a Message.
           </h3>
-          <Input className='h-12' placeholder='Your name' />
-          <Input className='h-12' type='email' placeholder='Email address' />
-          <Textarea className='' placeholder='Message' />
-          <Button className='h-12 text-lg uppercase'>Send Inquiry</Button>
+          <ContactForm/>
         </div>
       </div>
     </section>
