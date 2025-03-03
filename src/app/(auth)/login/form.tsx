@@ -101,7 +101,7 @@ export function LoginForm() {
           <FcGoogle className="size-5" />
         </Button>
         <div className="mt-6 flex items-center justify-end gap-2">
-          <p className="text-sm text-muted-foreground">Don't have an account?</p>
+          <p className="text-sm text-muted-foreground">Don&apos;t have an account?</p>
           <Link
             className="text-sm font-medium text-primary hover:underline hover:underline-offset-2"
             href="/register"
