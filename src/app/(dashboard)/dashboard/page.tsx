@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { isTokenExpired, logout } from '@/lib/auth'
 import { AllergenManager } from '@/components/allergens/AllergenManager'
 import { CategoryManager } from '@/components/categories/CategoryManager'
+import { IngredientManager } from '@/components/ingredients/IngredientManager'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface User {
@@ -106,6 +107,7 @@ export default function DashboardPage() {
         <TabsList>
           <TabsTrigger value="allergens">Allergens</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
         
@@ -115,6 +117,10 @@ export default function DashboardPage() {
 
         <TabsContent value="categories" className="space-y-4">
           <CategoryManager />
+        </TabsContent>
+
+        <TabsContent value="ingredients" className="space-y-4">
+          <IngredientManager />
         </TabsContent>
         
         <TabsContent value="subscription" className="space-y-4">

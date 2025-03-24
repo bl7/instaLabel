@@ -85,7 +85,7 @@ export function RegisterForm() {
       console.log('Success response:', data)
 
       toast.success('Registration successful')
-      router.push('/verify-otp')
+      router.push('/login')
     } catch (error) {
       console.error('Registration error:', error)
       if (error instanceof TypeError && error.message === 'Failed to fetch') {

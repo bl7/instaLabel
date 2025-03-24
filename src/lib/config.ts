@@ -15,5 +15,11 @@ export const API_ENDPOINTS = {
   },
   categories: {
     list: `${API_BASE_URL}/api/category`,
+  },
+  ingredients: {
+    list: `${API_BASE_URL}/api/ingredients`,
+    create: `${API_BASE_URL}/api/ingredients`,
+    update: (id: string) => `${API_BASE_URL}/api/ingredients/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/ingredients/${id}`,
   }
 } as const; 
