@@ -10,7 +10,7 @@ export async function getAllAllergens(): Promise<Allergen[]> {
   const token = localStorage.getItem('token')
   if (!token) throw new Error('No authentication token')
 
-  const response = await fetch(`${API_ENDPOINTS.allergens.list}`, {
+  const response = await fetch(API_ENDPOINTS.allergens.getAll, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -31,7 +31,7 @@ export async function checkIngredient(ingredient: string): Promise<{
   const token = localStorage.getItem('token')
   if (!token) throw new Error('No authentication token')
 
-  const response = await fetch(`${API_ENDPOINTS.allergens.check}/${encodeURIComponent(ingredient)}`, {
+  const response = await fetch(`${API_ENDPOINTS.allergens.getAll}/check/${encodeURIComponent(ingredient)}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },

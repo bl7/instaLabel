@@ -8,6 +8,8 @@ import { isTokenExpired, logout } from '@/lib/auth'
 import { AllergenManager } from '@/components/allergens/AllergenManager'
 import { CategoryManager } from '@/components/categories/CategoryManager'
 import { IngredientManager } from '@/components/ingredients/IngredientManager'
+import { MenuItemCategoryManager } from '@/components/menu-item-categories/MenuItemCategoryManager'
+import { MenuItemManager } from '@/components/menu-items/MenuItemManager'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface User {
@@ -107,7 +109,9 @@ export default function DashboardPage() {
         <TabsList>
           <TabsTrigger value="allergens">Allergens</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="menu-item-categories">Menu Item Categories</TabsTrigger>
           <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+          <TabsTrigger value="menu-items">Menu Items</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
         
@@ -119,8 +123,16 @@ export default function DashboardPage() {
           <CategoryManager />
         </TabsContent>
 
+        <TabsContent value="menu-item-categories" className="space-y-4">
+          <MenuItemCategoryManager />
+        </TabsContent>
+
         <TabsContent value="ingredients" className="space-y-4">
           <IngredientManager />
+        </TabsContent>
+
+        <TabsContent value="menu-items" className="space-y-4">
+          <MenuItemManager />
         </TabsContent>
         
         <TabsContent value="subscription" className="space-y-4">

@@ -68,6 +68,7 @@ const Marquee: FC<MarqueeProps> = forwardRef(function Marquee(
 
   // Calculate width of container and marquee and set multiplier
   const calculateWidth = useCallback(() => {
+    if (!isMounted) return;
     if (marqueeRef.current && containerRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
       const marqueeRect = marqueeRef.current.getBoundingClientRect();
@@ -93,7 +94,7 @@ const Marquee: FC<MarqueeProps> = forwardRef(function Marquee(
       setContainerWidth(containerWidth);
       setMarqueeWidth(marqueeWidth);
     }
-  }, [autoFill, containerRef, direction]);
+  }, [autoFill, containerRef, direction, isMounted]);
 
   // Calculate width and multiplier on mount and on window resize
   useEffect(() => {
@@ -125,7 +126,7 @@ const Marquee: FC<MarqueeProps> = forwardRef(function Marquee(
     if (typeof onMount === 'function') {
       onMount();
     }
-  }, []);
+  }, [onMount]);
 
   // Animation duration
   const duration = useMemo(() => {

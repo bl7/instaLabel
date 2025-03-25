@@ -10,16 +10,30 @@ export const API_ENDPOINTS = {
     me: `${API_BASE_URL}/api/me`,
   },
   allergens: {
-    list: `${API_BASE_URL}/api/allergens`,
-    check: `${API_BASE_URL}/api/allergens/check`,
+    getAll: `${API_BASE_URL}/api/allergens`,
+    create: `${API_BASE_URL}/api/allergens`,
+    update: (id: string) => `${API_BASE_URL}/api/allergens/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/allergens/${id}`,
   },
   categories: {
-    list: `${API_BASE_URL}/api/category`,
+    getAll: `${API_BASE_URL}/api/categories`,
   },
   ingredients: {
-    list: `${API_BASE_URL}/api/ingredients`,
+    getAll: `${API_BASE_URL}/api/ingredients`,
     create: `${API_BASE_URL}/api/ingredients`,
     update: (id: string) => `${API_BASE_URL}/api/ingredients/${id}`,
     delete: (id: string) => `${API_BASE_URL}/api/ingredients/${id}`,
-  }
+  },
+  menuItemCategories: {
+    getAll: `${API_BASE_URL}/api/menu-item-categories`,
+    create: `${API_BASE_URL}/api/menu-item-categories`,
+    update: (id: string) => `${API_BASE_URL}/api/menu-item-categories/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/menu-item-categories/${id}`,
+  },
+  menuItems: {
+    getAll: `${API_BASE_URL}/api/menu-items`,
+    create: `${API_BASE_URL}/api/menu-items`,
+    update: (id: string) => `${API_BASE_URL}/api/menu-items/${id}`,
+    delete: (id: string) => `${API_BASE_URL}/api/menu-items/${id}`,
+  },
 } as const; 

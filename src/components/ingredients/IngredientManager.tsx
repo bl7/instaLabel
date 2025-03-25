@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -10,133 +10,104 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { API_ENDPOINTS } from "@/lib/config"
-import { Ingredient, CreateIngredientData } from "@/types/ingredient"
-import { toast } from "sonner"
-import { Plus, Pencil, Trash2 } from "lucide-react"
-import { IngredientDialog } from "./IngredientDialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { Pencil, Trash2, Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { ingredientService, type Ingredient, type CreateIngredientData } from '@/lib/services/ingredientService'
+import { Badge } from "@/components/ui/badge"
+import { AlertTriangle } from 'lucide-react'
+import { menuItemCategoryService } from '@/lib/services/menuItemCategoryService'
+import { allergenService } from '@/lib/services/allergenService'
 
-const formatDate = (dateString?: string) => {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
+const ingredientFormSchema = z.object({
+  ingredientName: z.string().min(1, "Ingredient name is required"),
+  category: z.enum(["Frozen", "Canned", "Fresh Produce", "Dry Goods", "Dairy", "Condiments", "Other"]),
+})
 
 export function IngredientManager() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [allergens, setAllergens] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null)
 
-  const fetchIngredients = async () => {
+  const form = useForm<z.infer<typeof ingredientFormSchema>>({
+    resolver: zodResolver(ingredientFormSchema),
+    defaultValues: {
+      ingredientName: "",
+      category: "Other",
+    },
+  })
+
+  const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) return
-
-      const response = await fetch(API_ENDPOINTS.ingredients.list, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch ingredients')
-      }
-
-      const data = await response.json()
-      setIngredients(data)
+      const [ingredientsData, categoriesData, allergensData] = await Promise.all([
+        ingredientService.getAllIngredients(),
+        menuItemCategoryService.getAllCategories(),
+        allergenService.getAllAllergens(),
+      ])
+      setIngredients(ingredientsData)
+      setCategories(categoriesData)
+      setAllergens(allergensData)
     } catch (error) {
-      console.error('Error fetching ingredients:', error)
-      toast.error('Failed to load ingredients')
+      console.error('Error fetching data:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch data')
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchIngredients()
+    fetchData()
   }, [])
 
-  const handleCreate = async (data: CreateIngredientData) => {
+  const onSubmit = async (values: z.infer<typeof ingredientFormSchema>) => {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('Please log in to create ingredients')
-        return
+      if (editingIngredient) {
+        await ingredientService.updateIngredient({
+          _id: editingIngredient._id,
+          ...values,
+        })
+        toast.success('Ingredient updated successfully')
+      } else {
+        await ingredientService.createIngredient(values)
+        toast.success('Ingredient added successfully')
       }
-
-      console.log('Creating ingredient with data:', data)
-      console.log('Request URL:', API_ENDPOINTS.ingredients.create)
-      console.log('Request headers:', {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      })
-
-      const response = await fetch(API_ENDPOINTS.ingredients.create, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('Error response:', errorData)
-        throw new Error(errorData?.message || `Failed to create ingredient with status ${response.status}`)
-      }
-
-      const responseData = await response.json()
-      console.log('Success response:', responseData)
-
-      toast.success('Ingredient created successfully')
       setIsDialogOpen(false)
-      fetchIngredients()
-    } catch (error) {
-      console.error('Error creating ingredient:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to create ingredient')
-    }
-  }
-
-  const handleUpdate = async (data: CreateIngredientData & { _id: string }) => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('Please log in to update ingredients')
-        return
-      }
-
-      const response = await fetch(API_ENDPOINTS.ingredients.update(data._id), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('Error response:', errorData)
-        throw new Error(errorData?.message || `Failed to update ingredient with status ${response.status}`)
-      }
-
-      const responseData = await response.json()
-      console.log('Success response:', responseData)
-
-      toast.success('Ingredient updated successfully')
-      setIsDialogOpen(false)
+      form.reset()
       setEditingIngredient(null)
-      fetchIngredients()
+      fetchData()
     } catch (error) {
-      console.error('Error updating ingredient:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to update ingredient')
+      console.error('Error saving ingredient:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save ingredient')
     }
   }
 
@@ -144,49 +115,104 @@ export function IngredientManager() {
     if (!confirm('Are you sure you want to delete this ingredient?')) return
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('Please log in to delete ingredients')
-        return
-      }
-
-      const response = await fetch(API_ENDPOINTS.ingredients.delete(id), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('Error response:', errorData)
-        throw new Error(errorData?.message || `Failed to delete ingredient with status ${response.status}`)
-      }
-
-      const responseData = await response.json()
-      console.log('Success response:', responseData)
-
+      await ingredientService.deleteIngredient(id)
       toast.success('Ingredient deleted successfully')
-      fetchIngredients()
+      fetchData()
     } catch (error) {
       console.error('Error deleting ingredient:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to delete ingredient')
     }
   }
 
+  const handleEdit = (ingredient: Ingredient) => {
+    setEditingIngredient(ingredient)
+    form.reset({
+      ingredientName: ingredient.ingredientName,
+      category: ingredient.category,
+    })
+    setIsDialogOpen(true)
+  }
+
+  const checkForAllergens = (ingredientName: string): boolean => {
+    return allergens.some(allergen => 
+      ingredientName.toLowerCase().includes(allergen.allergenName.toLowerCase())
+    )
+  }
+
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div>Loading ingredients...</div>
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Ingredients</h2>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Ingredient
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Ingredient
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingIngredient ? 'Edit Ingredient' : 'Add New Ingredient'}</DialogTitle>
+              <DialogDescription>
+                {editingIngredient 
+                  ? 'Update the ingredient details below.'
+                  : 'Fill in the ingredient details below.'}
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="ingredientName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ingredient Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Frozen">Frozen</SelectItem>
+                          <SelectItem value="Canned">Canned</SelectItem>
+                          <SelectItem value="Fresh Produce">Fresh Produce</SelectItem>
+                          <SelectItem value="Dry Goods">Dry Goods</SelectItem>
+                          <SelectItem value="Dairy">Dairy</SelectItem>
+                          <SelectItem value="Condiments">Condiments</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit">
+                    {editingIngredient ? 'Update' : 'Add'} Ingredient
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="rounded-md border">
@@ -195,10 +221,8 @@ export function IngredientManager() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Date Received</TableHead>
-              <TableHead>Date Opened</TableHead>
-              <TableHead>Use By Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Allergens</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -206,40 +230,37 @@ export function IngredientManager() {
               <TableRow key={ingredient._id}>
                 <TableCell>{ingredient.ingredientName}</TableCell>
                 <TableCell>{ingredient.category}</TableCell>
-                <TableCell>{formatDate(ingredient.dateReceived)}</TableCell>
-                <TableCell>{formatDate(ingredient.dateOpened)}</TableCell>
-                <TableCell>{formatDate(ingredient.useByDate)}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingIngredient(ingredient)
-                      setIsDialogOpen(true)
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(ingredient._id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <TableCell>
+                  {checkForAllergens(ingredient.ingredientName) && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Contains Allergen
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(ingredient)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(ingredient._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-
-      <IngredientDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        ingredient={editingIngredient}
-        onSubmit={editingIngredient ? handleUpdate : handleCreate}
-      />
     </div>
   )
 } 
