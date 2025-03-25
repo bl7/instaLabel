@@ -20,16 +20,36 @@ import React from "react"
 import { useForm } from "react-hook-form"
 import { FcGoogle } from "react-icons/fc"
 import { z } from "zod"
-import { API_ENDPOINTS } from "@/lib/config"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useState } from "react"
+import { authService } from "@/lib/services/authService"
 
 const registerFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email({ message: "Input must be a valid email" }),
-  password: z.string().refine((val) => val.length >= 8, "Input must be at least 8 characters long"),
-  confirmPassword: z.string()
+  firstName: z.string()
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name must be less than 50 characters")
+    .regex(/^[a-zA-Z\s-']+$/, "First name can only contain letters, spaces, hyphens, and apostrophes"),
+  lastName: z.string()
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be less than 50 characters")
+    .regex(/^[a-zA-Z\s-']+$/, "Last name can only contain letters, spaces, hyphens, and apostrophes"),
+  email: z.string()
+    .email({ message: "Please enter a valid email address" })
+    .toLowerCase(),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+  confirmPassword: z.string(),
+  companyName: z.string()
+    .min(2, "Company name must be at least 2 characters")
+    .max(100, "Company name must be less than 100 characters"),
+  phone: z.string()
+    .regex(/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number"),
+  subscriptionPlan: z.enum(['basic', 'professional', 'enterprise']).default('basic')
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -42,50 +62,40 @@ export function RegisterForm() {
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
+      companyName: "",
+      phone: "",
+      subscriptionPlan: 'basic'
     },
   })
 
   async function onSubmit(values: z.infer<typeof registerFormSchema>) {
     try {
       setIsLoading(true)
-      // Remove confirmPassword and add subscriptionPlan
-      const { confirmPassword, ...registerData } = values
-      const userData = {
-        ...registerData,
-        subscriptionPlan: 'Free',
-      }
       
-      console.log('Attempting to register with:', userData)
-      console.log('Request URL:', API_ENDPOINTS.auth.register)
+      // Prepare data exactly as the backend expects it
+      const signupData = {
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        email: values.email.trim().toLowerCase(),
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        companyName: values.companyName.trim(),
+        phone: values.phone.trim(),
+        subscriptionPlan: values.subscriptionPlan
+      };
       
-      const response = await fetch(API_ENDPOINTS.auth.register, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-        credentials: 'include',
-      })
+      console.log('Attempting to sign up with:', signupData)
+      
+      const response = await authService.signup(signupData)
+      console.log('Success response:', response)
 
-      // Log the response status and headers
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers))
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        console.error('Error response:', errorData)
-        throw new Error(errorData?.message || `Registration failed with status ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('Success response:', data)
-
-      toast.success('Registration successful')
-      router.push('/verify-otp')
+      toast.success('Registration successful! Redirecting to dashboard...')
+      router.push('/dashboard')
     } catch (error) {
       console.error('Registration error:', error)
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
@@ -101,19 +111,34 @@ export function RegisterForm() {
   return (
     <Form {...form}>
       <form className="w-full max-w-lg space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input id="name" placeholder="John Doe" className="w-full" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input id="firstName" placeholder="John" className="w-full" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input id="lastName" placeholder="Doe" className="w-full" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="email"
@@ -122,6 +147,32 @@ export function RegisterForm() {
               <FormLabel>Email Address</FormLabel>
               <FormControl>
                 <Input id="email" placeholder="email@example.com" className="w-full" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="companyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company Name</FormLabel>
+              <FormControl>
+                <Input id="companyName" placeholder="Your Company" className="w-full" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input id="phone" placeholder="+1 (555) 123-4567" className="w-full" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

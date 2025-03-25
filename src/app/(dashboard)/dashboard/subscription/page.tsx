@@ -7,12 +7,15 @@ import { isTokenExpired, logout } from '@/lib/auth'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { authService } from '@/lib/services/authService'
 
 interface User {
   _id: string
   name?: string
+  firstName?: string
+  lastName?: string
   email: string
-  subscriptionPlan: string
+  subscriptionPlan?: string
   subscriptionExpiry?: Date
 }
 
@@ -40,20 +43,34 @@ export default function SubscriptionPage() {
         }
 
         console.log('Fetching user data...')
-        const response = await fetch(API_ENDPOINTS.auth.me, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          credentials: 'include'
-        })
+        try {
+          const response = await fetch(API_ENDPOINTS.auth.me, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          })
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data')
+          if (!response.ok) {
+            throw new Error('Failed to fetch user data')
+          }
+
+          const userData = await response.json()
+          console.log('User data loaded:', userData)
+          setUser(userData)
+        } catch (error) {
+          console.error('Error fetching user data from API:', error)
+          
+          // Fallback to local storage if API fails
+          const storedUser = authService.getCurrentUser()
+          if (storedUser) {
+            console.log('Using stored user data:', storedUser)
+            setUser(storedUser)
+          } else {
+            throw new Error('No user data available')
+          }
         }
-
-        const userData = await response.json()
-        console.log('User data loaded:', userData)
-        setUser(userData)
       } catch (error) {
         console.error('Error fetching user data:', error)
         await logout()

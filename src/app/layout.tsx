@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Oxygen } from 'next/font/google';
 import './globals.css';
 import og from './opengraph-image.png';
-import { Toaster } from "@/components/ui";
+import { Toaster } from "sonner";
 
 const base_font = Manrope({ subsets: ['latin'] });
 const accent_font = Oxygen({
@@ -49,8 +49,8 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <body
         className={`${base_font.className} ${accent_font.variable}`}>
-        {children}
-        <Toaster/>
+          {children}
+          <Toaster/>
       </body>
     </html>
   );

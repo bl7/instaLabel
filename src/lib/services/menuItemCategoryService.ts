@@ -4,13 +4,10 @@ export interface MenuItemCategory {
   _id: string
   name: string
   description?: string
-  expiryRules: {
-    defaultExpiryDays: number
-    requiresRefrigeration: boolean
-    requiresFreezing: boolean
-    notes?: string
-  }
-  user: string
+  isActive: boolean
+  tenantId: string
+  createdBy: string
+  updatedBy?: string
   createdAt: string
   updatedAt: string
 }
@@ -18,12 +15,7 @@ export interface MenuItemCategory {
 export interface CreateMenuItemCategoryData {
   name: string
   description?: string
-  expiryRules: {
-    defaultExpiryDays: number
-    requiresRefrigeration: boolean
-    requiresFreezing: boolean
-    notes?: string
-  }
+  isActive?: boolean
 }
 
 export interface UpdateMenuItemCategoryData extends CreateMenuItemCategoryData {
@@ -46,6 +38,26 @@ export const menuItemCategoryService = {
       const errorText = await response.text()
       console.error('Server response:', errorText)
       throw new Error('Failed to fetch categories')
+    }
+
+    return response.json()
+  },
+
+  async getCategoryById(id: string): Promise<MenuItemCategory> {
+    const token = localStorage.getItem('token')
+    if (!token) throw new Error('No authentication token found')
+
+    const response = await fetch(API_ENDPOINTS.menuItemCategories.getById(id), {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Server response:', errorText)
+      throw new Error('Failed to fetch category')
     }
 
     return response.json()
@@ -83,7 +95,7 @@ export const menuItemCategoryService = {
     console.log('Updating category with data:', JSON.stringify(data, null, 2))
 
     const response = await fetch(API_ENDPOINTS.menuItemCategories.update(data._id), {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

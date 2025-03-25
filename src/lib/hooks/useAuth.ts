@@ -1,25 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { API_ENDPOINTS } from '@/lib/config'
-import { isTokenExpired, logout } from '@/lib/auth'
-
-interface User {
-  _id: string
-  name?: string
-  email: string
-  subscriptionPlan: string
-  subscriptionExpiry?: Date
-}
+import { authService, type User, type Tenant } from '@/lib/services/authService'
 
 export function useAuth() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [tenant, setTenant] = useState<Tenant | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchUserData() {
+    async function checkAuthStatus() {
       try {
+        setIsLoading(true)
         const token = localStorage.getItem('token')
+        
         if (!token) {
           console.log('No token found, redirecting to login...')
           router.replace('/login')
@@ -27,48 +21,60 @@ export function useAuth() {
         }
 
         // Check if token is expired
-        if (isTokenExpired(token)) {
+        if (authService.isTokenExpired(token)) {
           console.log('Token expired, redirecting to login...')
-          await logout()
+          await authService.logout()
           router.replace('/login')
           return
         }
 
-        console.log('Fetching user data...')
-        const response = await fetch(API_ENDPOINTS.auth.me, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          credentials: 'include'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data')
+        // Get user info from token
+        const userInfo = authService.getUserInfo(token)
+        
+        if (!userInfo) {
+          console.log('Invalid token, redirecting to login...')
+          await authService.logout()
+          router.replace('/login')
+          return
         }
 
-        const userData = await response.json()
-        console.log('User data loaded:', userData)
-        setUser(userData)
+        // Set user data from stored token (to avoid additional API call)
+        // In a real application, you might want to fetch the user data from the API
+        // to ensure it's up to date
+        
+        // This is a placeholder since we don't have the complete user data in the token
+        // You might want to replace this with an API call to get the complete user data
+        setUser({
+          _id: userInfo.userId,
+          email: '',  // We don't have this in the token
+          name: '',   // We don't have this in the token
+          role: userInfo.role as 'admin' | 'manager' | 'staff',
+          tenantId: userInfo.tenantId,
+          createdAt: '',
+          updatedAt: '',
+        })
       } catch (error) {
-        console.error('Error fetching user data:', error)
-        await logout()
+        console.error('Error checking auth status:', error)
+        await authService.logout()
         router.replace('/login')
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchUserData()
+    checkAuthStatus()
   }, [router])
 
   const handleLogout = async () => {
-    await logout()
+    await authService.logout()
     router.replace('/login')
   }
 
   return {
     user,
+    tenant,
     isLoading,
+    isAuthenticated: !!user,
     logout: handleLogout,
   }
 } 

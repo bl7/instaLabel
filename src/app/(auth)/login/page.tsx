@@ -3,21 +3,14 @@ import { LoginForm } from "./form"
 import Link from "next/link"
 import Image from "next/image"
 
+function getTimeOfDayGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 18) return "Good afternoon"
+  return "Good evening"
+}
+
 export default function LoginPage() {
-  function getTimeOfDayGreeting() {
-    const currentHour = new Date().getHours()
-
-    if (currentHour >= 5 && currentHour < 12) {
-      return "Good morning"
-    } else if (currentHour >= 12 && currentHour < 18) {
-      return "Good afternoon"
-    } else if (currentHour >= 18 && currentHour < 22) {
-      return "Good evening"
-    } else {
-      return "Good night"
-    }
-  }
-
   return (
     <section className="flex h-full w-full flex-col justify-between py-12 min-h-fit">
       <div className="flex justify-between">
@@ -32,9 +25,6 @@ export default function LoginPage() {
         </div>
         <div>
           <h2 className="text-3xl font-semibold text-primary">instalabel</h2>
-          {/* <h4 className="-mt-2 text-end text-sm font-light text-muted-foreground/80">
-            By <span className="font-medium">Vitacre</span>
-          </h4> */}
         </div>
       </div>
       <div>
@@ -46,7 +36,7 @@ export default function LoginPage() {
         </div>
         <div className="mt-6 w-full">
           <LoginForm />
-        </div>{" "}
+        </div>
       </div>
       <div className="mt-6 text-sm text-muted-foreground">
         Copyright © 2023 - current. <Link href="/">Vitacre Pvt. Ltd.</Link> All rights reserved.

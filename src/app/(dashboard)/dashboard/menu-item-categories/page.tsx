@@ -4,28 +4,27 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { MenuItemCategoryManager } from '@/components/menu-item-categories/MenuItemCategoryManager'
-import { useAuth } from '@/lib/hooks/useAuth'
+import { authService } from '@/lib/services/authService'
 
 export default function MenuItemCategoriesPage() {
-  const { user, isLoading, logout } = useAuth()
   const router = useRouter()
-
+  const user = authService.getCurrentUser()
+  
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!user) {
       router.push('/login')
     }
-  }, [user, isLoading, router])
-
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
+  }, [user, router])
 
   if (!user) {
     return null
   }
 
   return (
-    <DashboardLayout user={user} onLogout={logout}>
+    <DashboardLayout user={user} onLogout={() => {
+      authService.logout();
+      router.push('/login');
+    }}>
       <div className="container mx-auto py-6">
         <MenuItemCategoryManager />
       </div>

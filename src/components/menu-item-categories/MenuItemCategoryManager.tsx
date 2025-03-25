@@ -22,6 +22,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -39,12 +41,7 @@ import { menuItemCategoryService, type MenuItemCategory, type CreateMenuItemCate
 const categoryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  expiryRules: z.object({
-    defaultExpiryDays: z.number().min(0, "Default expiry days must be 0 or greater"),
-    requiresRefrigeration: z.boolean(),
-    requiresFreezing: z.boolean(),
-    notes: z.string().optional(),
-  }),
+  isActive: z.boolean().default(true),
 })
 
 export function MenuItemCategoryManager() {
@@ -58,12 +55,7 @@ export function MenuItemCategoryManager() {
     defaultValues: {
       name: "",
       description: "",
-      expiryRules: {
-        defaultExpiryDays: 0,
-        requiresRefrigeration: false,
-        requiresFreezing: false,
-        notes: "",
-      },
+      isActive: true,
     },
   })
 
@@ -123,12 +115,7 @@ export function MenuItemCategoryManager() {
     form.reset({
       name: category.name,
       description: category.description || "",
-      expiryRules: {
-        defaultExpiryDays: category.expiryRules.defaultExpiryDays,
-        requiresRefrigeration: category.expiryRules.requiresRefrigeration,
-        requiresFreezing: category.expiryRules.requiresFreezing,
-        notes: category.expiryRules.notes || "",
-      },
+      isActive: category.isActive,
     })
     setIsDialogOpen(true)
   }
@@ -185,61 +172,26 @@ export function MenuItemCategoryManager() {
                     </FormItem>
                   )}
                 />
-                <div className="space-y-4">
-                  <h4 className="font-medium">Expiry Rules</h4>
-                  <FormField
-                    control={form.control}
-                    name="expiryRules.defaultExpiryDays"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default Expiry Days</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="expiryRules.requiresRefrigeration"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2">
-                        <FormControl>
-                          <Input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                        </FormControl>
-                        <FormLabel>Requires Refrigeration</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="expiryRules.requiresFreezing"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2">
-                        <FormControl>
-                          <Input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} />
-                        </FormControl>
-                        <FormLabel>Requires Freezing</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="expiryRules.notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Active</FormLabel>
+                        <FormDescription>
+                          Set whether this category is active and available for use
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <Button type="submit">
                     {editingCategory ? 'Update' : 'Add'} Category
@@ -257,6 +209,7 @@ export function MenuItemCategoryManager() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -265,6 +218,7 @@ export function MenuItemCategoryManager() {
               <TableRow key={category._id}>
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>{category.description || '-'}</TableCell>
+                <TableCell>{category.isActive ? 'Active' : 'Inactive'}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Button

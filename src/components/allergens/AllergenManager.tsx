@@ -28,10 +28,23 @@ export function AllergenManager() {
   async function loadAllergens() {
     try {
       const data = await getAllAllergens()
+      console.log('Allergens received in component:', data)
+      // Log a sample to verify structure
+      if (data.length > 0) {
+        console.log('Sample allergen in component:', data[0])
+        console.log('Has description?', Boolean(data[0].description))
+        console.log('Related ingredients count:', data[0].relatedIngredients ? data[0].relatedIngredients.length : 0)
+      }
       setAllergens(data)
-    } catch (error) {
-      toast.error('Failed to load allergens')
+    } catch (error: any) {
       console.error('Error loading allergens:', error)
+      
+      // Only handle authentication errors here, not redirect
+      if (error.message === 'No authentication token' || error.message === 'Authentication failed') {
+        toast.error('Authentication required. Please log in again.')
+      } else {
+        toast.error('Failed to load allergens')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -51,9 +64,15 @@ export function AllergenManager() {
       } else {
         toast.warning(`Found ${result.allergens.length} allergen(s)!`)
       }
-    } catch (error) {
-      toast.error('Failed to check ingredient')
+    } catch (error: any) {
       console.error('Error checking ingredient:', error)
+      
+      // Handle authentication errors gracefully
+      if (error.message === 'No authentication token' || error.message === 'Authentication failed') {
+        toast.error('Authentication required. Please log in again.')
+      } else {
+        toast.error('Failed to check ingredient')
+      }
     } finally {
       setIsChecking(false)
     }
@@ -97,19 +116,35 @@ export function AllergenManager() {
 
       {/* Allergens List */}
       <div className="rounded-lg border bg-card">
+        <div className="p-4 flex flex-col space-y-2">
+          <h2 className="text-xl font-semibold">Allergens List</h2>
+          <p className="text-sm text-muted-foreground">
+            Allergen severity is assessed using AI analysis of medical data, ingredient prevalence, and description keywords.
+          </p>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Allergen Name</TableHead>
-              <TableHead>Related Ingredients</TableHead>
+              <TableHead className="w-1/4">Allergen Name</TableHead>
+              <TableHead className="w-1/4">Description</TableHead>
+              <TableHead className="w-2/5">Related Ingredients</TableHead>
+              <TableHead className="w-1/12">
+                <div className="flex items-center space-x-1">
+                  <span>Severity</span>
+                  <span className="text-xs text-muted-foreground">(AI)</span>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {allergens.map((allergen) => (
               <TableRow key={allergen._id}>
                 <TableCell className="font-medium">{allergen.allergenName}</TableCell>
+                <TableCell className="text-sm">
+                  {allergen.description || <span className="text-muted-foreground italic">No description</span>}
+                </TableCell>
                 <TableCell>
-                  {allergen.relatedIngredients.length > 0 ? (
+                  {allergen.relatedIngredients && allergen.relatedIngredients.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {allergen.relatedIngredients.map((ingredient) => (
                         <span
@@ -121,8 +156,18 @@ export function AllergenManager() {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">No related ingredients</span>
+                    <span className="text-muted-foreground italic">No related ingredients</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium 
+                    ${allergen.severity === 'high' ? 'bg-red-100 text-red-800' : 
+                      allergen.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-blue-100 text-blue-800'}`}>
+                    {allergen.severity === 'high' ? '⚠️ High' : 
+                     allergen.severity === 'medium' ? '⚠ Medium' : 
+                     '• Low'}
+                  </span>
                 </TableCell>
               </TableRow>
             ))}
