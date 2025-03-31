@@ -14,7 +14,7 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -29,10 +29,8 @@ export function LoginForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState<'lookup' | 'login'>('lookup')
-  const [tenantEmail, setTenantEmail] = useState("")
   const [tenantName, setTenantName] = useState("")
-  const [companyEmail, setCompanyEmail] = useState("")
-  
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,7 +39,7 @@ export function LoginForm() {
     },
   })
 
-  async function findTenant() {
+  const findTenant = useCallback(async () => {
     const email = form.getValues("email")
     if (!email) {
       toast.error("Please enter your email address")
@@ -51,58 +49,53 @@ export function LoginForm() {
     try {
       setIsLoading(true)
       const tenant = await authService.getTenantByEmail(email)
-      setTenantEmail(email)
-      setCompanyEmail(email)
+      console.log(tenant)
       setTenantName(tenant.name || 'Your company')
       setStep('login')
       toast.success(`Found company: ${tenant.name || 'Your company'}`)
     } catch (error) {
       console.error('Error finding tenant:', error)
-      toast.error('We could not find a company associated with this email')
+      toast.error('No company associated with this email')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [form])
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
+  const onSubmit = useCallback(async (values: z.infer<typeof loginSchema>) => {
     try {
       setIsLoading(true)
       const response = await authService.login(values)
-      
+      console.log(response)
+
       // Store token and user data
       if (response.token) {
-        localStorage.setItem('token', response.token)
-        if (response.user) localStorage.setItem('user', JSON.stringify(response.user))
-        if (response.tenant) localStorage.setItem('tenant', JSON.stringify(response.tenant))
+        router.push('/dashboard')
+        toast.success('Login successful')
       }
-      
-      toast.success('Login successful')
-      router.push('/dashboard')
+
     } catch (error) {
       console.error('Login error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to login')
     } finally {
       setIsLoading(false)
     }
-  }
-
+  }, [router])
   return (
     <Form {...form}>
       <form className="w-full max-w-lg space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-        {step === 'login' && (
-          <div className="text-xl font-semibold text-center mb-6">
-            {tenantName}
-          </div>
-        )}
-        
+        {/* Step 1: Lookup Tenant */}
         {step === 'lookup' && (
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <div className="flex space-x-2">
+          <>
+            <div className="text-xl font-semibold text-center mb-6">
+              {tenantName ? `Find your company within ${tenantName}` : "Enter your company email"}
+            </div>
+  
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
                   <FormControl>
                     <Input 
                       id="email" 
@@ -112,47 +105,42 @@ export function LoginForm() {
                       {...field} 
                     />
                   </FormControl>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={findTenant}
-                    disabled={isLoading}
-                  >
-                    Find
-                  </Button>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
-        
+  
+        {/* Step 2: Login after tenant is found */}
         {step === 'login' && (
           <>
+            <div className="text-xl font-semibold text-center mb-6">
+              {tenantName ? `Sign in to ${tenantName}` : "Company not found. Try again."}
+            </div>
+  
+            {/* Request User's Email within the Company */}
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Email</FormLabel>
+                  <FormLabel>Your Email within {tenantName}</FormLabel>
                   <FormControl>
                     <Input 
-                      id="email" 
+                      id="userEmail" 
                       type="email"
                       placeholder="your.email@company.com" 
                       className="w-full" 
-                      {...field}
-                      value={field.value || ''}
+                      {...field} 
                     />
                   </FormControl>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Enter your email address within {tenantName}
-                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+  
+            {/* Request Password */}
             <FormField
               control={form.control}
               name="password"
@@ -171,7 +159,8 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            
+  
+            {/* Forgot Password Link */}
             <div className="flex items-center justify-between">
               <Link
                 className="text-sm font-medium text-primary hover:underline hover:underline-offset-2"
@@ -182,8 +171,10 @@ export function LoginForm() {
             </div>
           </>
         )}
-        
+  
+        {/* Action Buttons */}
         <div className="flex space-x-2">
+          {/* Back Button (Only for Step 2) */}
           {step === 'login' && (
             <Button 
               type="button" 
@@ -194,16 +185,19 @@ export function LoginForm() {
               Back
             </Button>
           )}
+  
+          {/* Submit Button */}
           <Button 
             type={step === 'lookup' ? 'button' : 'submit'} 
             className="flex-1" 
             disabled={isLoading}
             onClick={step === 'lookup' ? findTenant : undefined}
           >
-            {isLoading ? "Processing..." : step === 'lookup' ? "Find Company" : "Sign in"}
+            {isLoading ? "Processing..." : step === 'lookup' ? "Find Company" : "Sign In"}
           </Button>
         </div>
-        
+  
+        {/* Register Link */}
         <div className="mt-6 flex items-center justify-end gap-2">
           <p className="text-sm text-muted-foreground">Don't have an account?</p>
           <Link
@@ -216,4 +210,5 @@ export function LoginForm() {
       </form>
     </Form>
   )
+  
 }

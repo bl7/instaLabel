@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { API_ENDPOINTS } from '@/lib/config'
 import { isTokenExpired, logout } from '@/lib/auth'
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { AllergenManager } from '@/components/allergens/AllergenManager'
 import { authService } from '@/lib/services/authService'
 
@@ -100,17 +99,24 @@ export default function AllergensPage() {
   }
 
   return (
-    <DashboardLayout user={user} onLogout={handleLogout}>
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Allergens</h1>
+          <h1 className="text-3xl font-bold">
+            Welcome, {user.firstName}! 👋
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Manage your allergens and check ingredients
           </p>
         </div>
 
+      </div>
+
+      {/* Main Content */}
+      <div className="space-y-6">
         <AllergenManager />
       </div>
-    </DashboardLayout>
+    </div>
   )
-} 
+}

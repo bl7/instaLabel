@@ -12,8 +12,9 @@ export async function getAllCategories(): Promise<Category[]> {
   const response = await fetch(`${API_BASE_URL}/api/category`, {
     headers: {
       'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     },
-    credentials: 'include'
+    // credentials: 'include'
   })
 
   if (!response.ok) {

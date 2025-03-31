@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import { authService, type User, type Tenant } from '@/lib/services/authService'
 
 export function useAuth() {
@@ -9,10 +9,10 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    async function checkAuthStatus() {
+    const checkAuthStatus = async () => {
       try {
         setIsLoading(true)
-        const token = localStorage.getItem('token')
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
         
         if (!token) {
           console.log('No token found, redirecting to login...')
@@ -27,7 +27,6 @@ export function useAuth() {
           router.replace('/login')
           return
         }
-
         // Get user info from token
         const userInfo = authService.getUserInfo(token)
         
@@ -38,21 +37,9 @@ export function useAuth() {
           return
         }
 
-        // Set user data from stored token (to avoid additional API call)
-        // In a real application, you might want to fetch the user data from the API
-        // to ensure it's up to date
-        
-        // This is a placeholder since we don't have the complete user data in the token
-        // You might want to replace this with an API call to get the complete user data
-        setUser({
-          _id: userInfo.userId,
-          email: '',  // We don't have this in the token
-          name: '',   // We don't have this in the token
-          role: userInfo.role as 'admin' | 'manager' | 'staff',
-          tenantId: userInfo.tenantId,
-          createdAt: '',
-          updatedAt: '',
-        })
+        const tenantFromApi = await authService.getTenantById(userInfo.tenantId)
+        setTenant(tenantFromApi)
+
       } catch (error) {
         console.error('Error checking auth status:', error)
         await authService.logout()
@@ -77,4 +64,4 @@ export function useAuth() {
     isAuthenticated: !!user,
     logout: handleLogout,
   }
-} 
+}

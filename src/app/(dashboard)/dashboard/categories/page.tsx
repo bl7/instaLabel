@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { API_ENDPOINTS } from '@/lib/config'
 import { isTokenExpired, logout } from '@/lib/auth'
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
 import { CategoryManager } from '@/components/categories/CategoryManager'
 import { authService } from '@/lib/services/authService'
 
@@ -100,17 +99,26 @@ export default function CategoriesPage() {
   }
 
   return (
-    <DashboardLayout user={user} onLogout={handleLogout}>
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Categories</h1>
+          <h1 className="text-3xl font-bold">
+            Welcome, {user.firstName}! 👋
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Organize your ingredients into categories
           </p>
         </div>
+        <button onClick={handleLogout} className="text-lg text-red-600">
+          Logout
+        </button>
+      </div>
 
+      {/* Main Content */}
+      <div className="space-y-6">
         <CategoryManager />
       </div>
-    </DashboardLayout>
+    </div>
   )
-} 
+}

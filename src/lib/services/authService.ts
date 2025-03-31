@@ -1,10 +1,13 @@
+"use client";
+
 import { API_ENDPOINTS } from '@/lib/config'
 import { apiClient } from '@/lib/api/client'
 
 export interface User {
   _id: string
   email: string
-  name: string
+  firstName: string
+  lastName: string
   phone?: string
   role: 'admin' | 'manager' | 'staff'
   tenantId: string
@@ -65,8 +68,7 @@ export interface LoginData {
 
 export interface AuthResponse {
   token: string
-  user: User
-  tenant: Tenant
+  data: { user: User }
 }
 
 export interface LoginCredentials {
@@ -83,13 +85,12 @@ export const authService = {
         data,
         { requiresAuth: false }
       );
-      
+
       if (response.token) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem('tenant', JSON.stringify(response.tenant));
+        window.localStorage.setItem('token', response.token);
+        window.localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-      
+
       return response;
     } catch (error) {
       console.error('Signup error:', error);
@@ -104,13 +105,14 @@ export const authService = {
         credentials,
         { requiresAuth: false }
       );
-      
+      console.log(response)
+
       if (response.token) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        localStorage.setItem('tenant', JSON.stringify(response.tenant));
+        window.localStorage.setItem('token', response.token);
+        window.localStorage.setItem('user', JSON.stringify(response.data.user));
+        window.localStorage.setItem('tenant', JSON.stringify(response.data.user.tenantId)) ;
       }
-      
+
       return response;
     } catch (error) {
       console.error('Login error:', error);
@@ -120,11 +122,11 @@ export const authService = {
 
   async getTenantByEmail(email: string): Promise<Tenant> {
     try {
-      const response = await apiClient.get<{ tenant: Tenant }>(
+      const response = await apiClient.get<{ data: { tenant: Tenant } }>(
         API_ENDPOINTS.auth.tenantForEmail(email),
         { requiresAuth: false }
       );
-      return response.tenant || response;
+      return response.data.tenant;
     } catch (error) {
       console.error('Company lookup error:', error);
       throw error;
@@ -138,20 +140,20 @@ export const authService = {
         {},
         { requiresAuth: true }
       );
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tenant');
+      window.localStorage.removeItem('token');
+      window.localStorage.removeItem('user');
+      window.localStorage.removeItem('tenant');
     } catch (error) {
       console.error('Error during logout:', error);
       // Still clear local storage even if the API call fails
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tenant');
+      window.localStorage.removeItem('token');
+      window.localStorage.removeItem('user');
+      window.localStorage.removeItem('tenant');
     }
   },
 
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('token')
+    const token = window.localStorage.getItem('token')
     return !!token && !this.isTokenExpired(token)
   },
 
@@ -162,17 +164,17 @@ export const authService = {
         console.log('Development mode: Bypassing token expiration check');
         return false; // Never expire in development
       }
-      
+
       console.log('Checking token expiration...');
       const parts = token.split('.');
       if (parts.length !== 3) {
         console.error('Invalid token format (not 3 parts):', parts.length);
         return true;
       }
-      
+
       const base64Url = parts[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      
+
       console.log('Decoding token payload...');
       let decodedPayload;
       try {
@@ -181,7 +183,7 @@ export const authService = {
         console.error('Failed to decode base64 token:', e);
         return true;
       }
-      
+
       console.log('Parsing token JSON...');
       let payload;
       try {
@@ -190,39 +192,39 @@ export const authService = {
         console.error('Failed to parse token JSON:', e, 'Raw payload:', decodedPayload);
         return true;
       }
-      
+
       console.log('Token payload:', payload);
-      
+
       if (!payload || !payload.exp) {
         console.warn('Token has no expiration time (exp) claim');
         return false; // If no expiration, assume it's not expired
       }
-      
+
       const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-      
+
       // Normalize expiration time - check if it's in seconds or milliseconds
       const expTimestamp = payload.exp;
-      
+
       // If exp is much larger than now (like 13 digits vs 10), it's likely in milliseconds
       const isMilliseconds = expTimestamp > currentTime * 100;
       const normalizedExp = isMilliseconds ? expTimestamp / 1000 : expTimestamp;
-      
+
       // For added stability - use a very large buffer (1 day) to prevent frequent logouts
       const stableBufferSeconds = -86400; // Negative buffer gives extra time (1 day)
-      
+
       const timeRemaining = normalizedExp - currentTime;
       const expDate = new Date(normalizedExp * 1000);
-      
+
       console.log(`Current time: ${currentTime} (${new Date(currentTime * 1000).toLocaleString()})`);
       console.log(`Exp time: ${normalizedExp} (${expDate.toLocaleString()})`);
-      console.log(`Time remaining: ${timeRemaining} seconds (${(timeRemaining/60).toFixed(2)} minutes)`);
+      console.log(`Time remaining: ${timeRemaining} seconds (${(timeRemaining / 60).toFixed(2)} minutes)`);
       console.log(`Using stability buffer: ${stableBufferSeconds} seconds`);
-      
+
       // Token is expired if current time + buffer is at or past expiration
       // Using negative buffer means we give extra time before declaring expired
       const isExpired = timeRemaining <= stableBufferSeconds;
       console.log('Token expired?', isExpired);
-      
+
       return isExpired;
     } catch (error) {
       console.error('Error checking token expiration:', error);
@@ -258,20 +260,23 @@ export const authService = {
   },
 
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
+    if (typeof window !== "undefined") {
+      const userStr = window.localStorage.getItem('user');
+      if (!userStr) return null;
+  
+      try {
+        return JSON.parse(userStr) as User;
+      } catch (err) {
+        console.error("Failed to parse user data:", err);
+        return null;
+      }
     }
-  },
+    return null;
+  },  
 
   getCurrentTenant(): Tenant | null {
-    const tenantStr = localStorage.getItem('tenant');
+    const tenantStr = window.localStorage.getItem('tenant');
     if (!tenantStr) return null;
-    
     try {
       return JSON.parse(tenantStr);
     } catch {
@@ -287,11 +292,11 @@ export const authService = {
         {},
         { requiresAuth: false }
       );
-      
+
       if (response.token) {
-        localStorage.setItem('token', response.token);
+        window.localStorage.setItem('token', response.token);
       }
-      
+
       return response.token;
     } catch (error) {
       console.error('Error refreshing token:', error);
@@ -307,10 +312,10 @@ export const authService = {
         console.warn('Invalid token format');
         return null;
       }
-      
+
       const base64Url = parts[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      
+
       // Decode the base64 string
       const jsonPayload = decodeURIComponent(
         atob(base64)
@@ -318,7 +323,7 @@ export const authService = {
           .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
           .join('')
       );
-      
+
       return JSON.parse(jsonPayload);
     } catch (error) {
       console.error('Error parsing JWT token:', error);
