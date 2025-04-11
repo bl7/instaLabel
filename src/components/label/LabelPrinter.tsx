@@ -41,11 +41,14 @@ export default function LabelPrintPage() {
   const PRINTER_IP = "192.168.0.100" // change to your printer IP
   const PRINTER_PORT = 8008
 
-  const items = tab === "ingredients" ? demoIngredients : demoMenuItems
+  const items =
+    tab === "ingredients"
+      ? demoIngredients.map((item) => ({ ...item, uniqueId: `ingredient-${item.id}` }))
+      : demoMenuItems.map((item) => ({ ...item, uniqueId: `menu-${item.id}` }))
 
   useEffect(() => {
     const initial: { [key: string]: number } = {}
-    items.forEach((it) => (initial[it.id] = 1))
+    items.forEach((it) => (initial[it.uniqueId] = 1))
     setQuantities(initial)
   }, [tab])
 
@@ -69,12 +72,14 @@ export default function LabelPrintPage() {
 
   const toggleSelection = (item: any) => {
     setSelectedItems((prev) =>
-      prev.some((i) => i.id === item.id) ? prev.filter((i) => i.id !== item.id) : [...prev, item]
+      prev.some((i) => i.uniqueId === item.uniqueId)
+        ? prev.filter((i) => i.uniqueId !== item.uniqueId)
+        : [...prev, item]
     )
   }
 
   const openPrintDialog = (item?: any) => {
-    if (item) setSelectedItems([item])
+    if (item) setSelectedItems([{ ...item }])
     setPrintDialogOpen(true)
   }
 
@@ -101,7 +106,7 @@ export default function LabelPrintPage() {
             return
           }
           selectedItems.forEach((item) => {
-            const qty = quantities[item.id] || 1
+            const qty = quantities[item.uniqueId] || 1
             for (let i = 0; i < qty; i++) {
               dev.addText(`${item.name}\n`)
               if (item.allergens) dev.addText(`Allergens: ${item.allergens.join(", ")}\n`)
@@ -120,14 +125,8 @@ export default function LabelPrintPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Tabs defaultValue="ingredients" value={tab} onValueChange={setTab}>
-          <TabsList className="rounded-lg bg-muted p-1">
-            <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-            <TabsTrigger value="menu">Menu Items</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
+      {/* Printer Status Row */}
+      <div className="mb-4 flex justify-end">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Printer</span>
           <div
@@ -136,15 +135,27 @@ export default function LabelPrintPage() {
         </div>
       </div>
 
+      {/* Tabs Full Width */}
+      <Tabs defaultValue="ingredients" value={tab} onValueChange={setTab}>
+        <TabsList className="mb-6 flex w-full justify-center rounded-lg bg-muted p-1">
+          <TabsTrigger className="flex-1" value="ingredients">
+            Ingredients
+          </TabsTrigger>
+          <TabsTrigger className="flex-1" value="menu">
+            Menu Items
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {items.map((item) => (
           <div
-            key={item.id}
+            key={item.uniqueId}
             className="flex flex-col justify-between rounded-xl border p-4 shadow-sm transition duration-200 hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <Checkbox
-                checked={selectedItems.some((i) => i.id === item.id)}
+                checked={selectedItems.some((i) => i.uniqueId === item.uniqueId)}
                 onCheckedChange={() => toggleSelection(item)}
               />
               <span className="text-lg font-semibold">{item.name}</span>
@@ -173,14 +184,14 @@ export default function LabelPrintPage() {
           </DialogHeader>
           <div className="space-y-4">
             {selectedItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between">
+              <div key={item.uniqueId} className="flex items-center justify-between">
                 <span>{item.name}</span>
                 <Input
                   type="number"
                   min={1}
-                  value={quantities[item.id] || 1}
+                  value={quantities[item.uniqueId] || 1}
                   onChange={(e) =>
-                    setQuantities({ ...quantities, [item.id]: parseInt(e.target.value, 10) })
+                    setQuantities({ ...quantities, [item.uniqueId]: parseInt(e.target.value, 10) })
                   }
                   className="w-20"
                 />
