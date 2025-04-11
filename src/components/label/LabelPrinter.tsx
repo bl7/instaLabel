@@ -1,129 +1,199 @@
-import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+"use client"
 
-// Mock data (replace with fetch calls later)
+import React, { useEffect, useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
+import { PrinterIcon } from "lucide-react"
+
 const demoIngredients = [
-  { id: "1", name: "Tomato" },
-  { id: "2", name: "Lettuce" },
-  { id: "3", name: "Cheddar Cheese" },
+  { id: 1, name: "Tomato", allergens: ["None"] },
+  { id: 2, name: "Peanut Sauce", allergens: ["Peanuts"] },
+  { id: 3, name: "Cheese", allergens: ["Milk"] },
 ]
 
 const demoMenuItems = [
-  { id: "1", name: "Veggie Burger" },
-  { id: "2", name: "Chicken Wrap" },
+  { id: 1, name: "Cheeseburger", ingredients: ["Cheese", "Beef Patty"] },
+  { id: 2, name: "Satay Skewers", ingredients: ["Chicken", "Peanut Sauce"] },
 ]
 
-export default function LabelPrintComponent() {
-  const [connected, setConnected] = useState(false)
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
-  const [selectedMenuItems, setSelectedMenuItems] = useState<string[]>([])
+declare global {
+  interface Window {
+    epson: any
+  }
+}
 
-  // @ts-ignore
-  const epos = typeof window !== "undefined" ? window?.epson : null
-  let ePosDevice: any
-  let printer: any
+export default function LabelPrintPage() {
+  const [selectedItems, setSelectedItems] = useState<any[]>([])
+  const [printDialogOpen, setPrintDialogOpen] = useState(false)
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({})
+  const [tab, setTab] = useState("ingredients")
+  const [connectionStatus, setConnectionStatus] = useState(false)
+  const PRINTER_IP = "192.168.0.100" // change to your printer IP
+  const PRINTER_PORT = 8008
+
+  const items = tab === "ingredients" ? demoIngredients : demoMenuItems
 
   useEffect(() => {
-    if (epos) {
-      ePosDevice = new epos.ePOSDevice()
-      ePosDevice.connect(
-        "192.168.192.168", // update with your printer IP
-        8008,
-        (result: string) => {
-          if (result === "OK" || result === "SSL_CONNECT_OK") {
-            ePosDevice.createDevice(
-              "local_printer",
-              epos.ePOSDevice.DEVICE_TYPE_PRINTER,
-              { crypto: true, buffer: false },
-              (dev: any, code: string) => {
-                if (code === "OK") {
-                  printer = dev
-                  setConnected(true)
-                } else {
-                  console.error("CreateDevice Error", code)
-                }
-              }
-            )
-          } else {
-            console.error("Connection failed:", result)
-          }
-        }
-      )
-    }
-  }, [epos])
+    const initial: { [key: string]: number } = {}
+    items.forEach((it) => (initial[it.id] = 1))
+    setQuantities(initial)
+  }, [tab])
 
-  const toggleSelection = (id: string, type: "ingredient" | "menu") => {
-    if (type === "ingredient") {
-      setSelectedIngredients((prev) =>
-        prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-      )
-    } else {
-      setSelectedMenuItems((prev) =>
-        prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-      )
+  useEffect(() => {
+    const script = document.createElement("script")
+    script.src = "/epson/epos-2.26.0.js"
+    script.async = true
+    script.onload = () => {
+      if (window.epson) {
+        const epos = new window.epson.ePOSDevice()
+        epos.connect(PRINTER_IP, PRINTER_PORT, (ok: boolean) => {
+          setConnectionStatus(ok)
+          try {
+            epos.disconnect()
+          } catch {}
+        })
+      }
     }
+    document.body.appendChild(script)
+  }, [])
+
+  const toggleSelection = (item: any) => {
+    setSelectedItems((prev) =>
+      prev.some((i) => i.id === item.id) ? prev.filter((i) => i.id !== item.id) : [...prev, item]
+    )
   }
 
-  const printLabels = () => {
-    if (!connected || !printer) return
+  const openPrintDialog = (item?: any) => {
+    if (item) setSelectedItems([item])
+    setPrintDialogOpen(true)
+  }
 
-    const selectedItems = [
-      ...demoIngredients.filter((i) => selectedIngredients.includes(i.id)),
-      ...demoMenuItems.filter((i) => selectedMenuItems.includes(i.id)),
-    ]
-
-    selectedItems.forEach((item) => {
-      printer.addText(`${item.name}\n`)
-      printer.addFeedLine(1)
-      printer.addCut()
+  const handlePrint = () => {
+    if (!window.epson) {
+      alert("Epson SDK not loaded yet.")
+      return
+    }
+    const epos = new window.epson.ePOSDevice()
+    epos.connect(PRINTER_IP, PRINTER_PORT, (ok: boolean, code: string) => {
+      if (!ok) {
+        alert("Printer connection failed.")
+        console.error("connect error:", code)
+        return
+      }
+      epos.createDevice(
+        "local_printer",
+        epos.DEVICE_TYPE_PRINTER,
+        { crypto: false, buffer: false },
+        (dev: any, createCode: string) => {
+          if (!dev) {
+            alert("Failed to initialize printer.")
+            console.error("createDevice error:", createCode)
+            return
+          }
+          selectedItems.forEach((item) => {
+            const qty = quantities[item.id] || 1
+            for (let i = 0; i < qty; i++) {
+              dev.addText(`${item.name}\n`)
+              if (item.allergens) dev.addText(`Allergens: ${item.allergens.join(", ")}\n`)
+              if (item.ingredients) dev.addText(`Ingredients: ${item.ingredients.join(", ")}\n`)
+              dev.addFeedLine(1)
+              dev.addCut()
+            }
+          })
+          dev.send()
+          setPrintDialogOpen(false)
+          setSelectedItems([])
+        }
+      )
     })
-
-    printer.send()
   }
 
   return (
-    <div className="space-y-6 p-4">
-      <Card>
-        <CardContent className="pt-4">
-          <div className="mb-2 font-semibold text-green-600">
-            Printer Status: {connected ? "Connected" : "Not Connected"}
-          </div>
+    <div className="p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <Tabs defaultValue="ingredients" value={tab} onValueChange={setTab}>
+          <TabsList className="rounded-lg bg-muted p-1">
+            <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+            <TabsTrigger value="menu">Menu Items</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="mb-2 font-bold">Ingredients</h3>
-              {demoIngredients.map((ingredient) => (
-                <div key={ingredient.id} className="mb-1 flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedIngredients.includes(ingredient.id)}
-                    onCheckedChange={() => toggleSelection(ingredient.id, "ingredient")}
-                  />
-                  <span>{ingredient.name}</span>
-                </div>
-              ))}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Printer</span>
+          <div
+            className={cn("h-3 w-3 rounded-full", connectionStatus ? "bg-green-500" : "bg-red-500")}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-col justify-between rounded-xl border p-4 shadow-sm transition duration-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <Checkbox
+                checked={selectedItems.some((i) => i.id === item.id)}
+                onCheckedChange={() => toggleSelection(item)}
+              />
+              <span className="text-lg font-semibold">{item.name}</span>
             </div>
-
-            <div>
-              <h3 className="mb-2 font-bold">Menu Items</h3>
-              {demoMenuItems.map((item) => (
-                <div key={item.id} className="mb-1 flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedMenuItems.includes(item.id)}
-                    onCheckedChange={() => toggleSelection(item.id, "menu")}
-                  />
-                  <span>{item.name}</span>
-                </div>
-              ))}
-            </div>
+            <Button variant="outline" className="mt-4" onClick={() => openPrintDialog(item)}>
+              <PrinterIcon className="mr-2 h-4 w-4" /> Print
+            </Button>
           </div>
+        ))}
+      </div>
 
-          <Button onClick={printLabels} className="mt-6">
-            Print Selected Labels
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => openPrintDialog()}
+          disabled={selectedItems.length === 0}
+          className="px-6 py-3 text-base font-medium shadow-lg"
+        >
+          <PrinterIcon className="mr-2 h-5 w-5" /> Print Selected
+        </Button>
+      </div>
+
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Quantities</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between">
+                <span>{item.name}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  value={quantities[item.id] || 1}
+                  onChange={(e) =>
+                    setQuantities({ ...quantities, [item.id]: parseInt(e.target.value, 10) })
+                  }
+                  className="w-20"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="pt-4">
+            <Button onClick={handlePrint} className="w-full">
+              Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
